@@ -52,6 +52,10 @@ export default function LoginScreen({ navigation }) {
         password,
       });
       await AsyncStorage.setItem('authToken', response.data.token);
+      const token = response.data.token;
+      await AsyncStorage.setItem('authToken', token); 
+  
+      axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
       setEmail('');
       setPassword('');
       Alert.alert('Success', 'Login successful!');
@@ -120,6 +124,15 @@ export default function LoginScreen({ navigation }) {
       >
         <Text style={styles.loginButtonText}>{loading ? 'Loading...' : 'Login'}</Text>
       </TouchableOpacity>
+      <Text style={styles.signUptext}> 
+        If You Not Registered Yet Please Sign Up
+      </Text>
+      <TouchableOpacity
+        style={styles.SIgnUpButton}
+        onPress={() => navigation.navigate('SignUp')}
+      >
+        <Text style={styles.loginButtonText}>{loading ? 'Loading...' : 'Sign Up'}</Text>
+      </TouchableOpacity>
     </View>
   );
 }
@@ -181,9 +194,28 @@ const styles = StyleSheet.create({
     width: '100%',
     alignItems: 'center',
   },
+  SIgnUpButton: {
+    marginTop: 20,
+    backgroundColor: '#010101',
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+    width: '100%',
+    alignItems: 'center',
+  },
   loginButtonText: {
     color: '#fff',
     fontSize: 18,
     fontWeight: 'bold',
   },
+
+  signUptext: {
+    color: '#000',
+    padding:'10px',
+    fontSize: 12,
+    marginTop: 20,
+    fontWeight: 'bold',
+  },
+
+
 });

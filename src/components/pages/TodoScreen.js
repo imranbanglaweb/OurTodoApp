@@ -9,29 +9,50 @@ import {
     StyleSheet,
     ActivityIndicator,
     RefreshControl,
+    Button,
+    Platform ,
 } from 'react-native';
 import axios from 'axios';
 import Toast from 'react-native-toast-message';
-import Icon from 'react-native-vector-icons/MaterialIcons';
+// import Icon from 'react-native-vector-icons/MaterialIcons';
+import Icon from 'react-native-vector-icons/Ionicons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
+import DateTimePicker from '@react-native-community/datetimepicker';
 export default function TodoScreen({ navigation }) {
     const [todos, setTodos] = useState([]);
     const [newTodo, setNewTodo] = useState('');
     const [loading, setLoading] = useState(false);
     const [refreshing, setRefreshing] = useState(false);
+  
+
+    const [date, setDate] = useState(new Date());
+    const [show, setShow] = useState(false);
+  
+    const onChange = (event, selectedDate) => {
+      if (selectedDate) {
+        setDate(selectedDate);
+      }
+      setShow(false);
+    };
+
 
     const fetchTodos = async () => {
         setLoading(true);
+        
         try {
-            const response = await axios.get('https://demoapi.uhrlbd.com/public/api/todos');
-            console.log("Todos State:", todos);
-
-            // Ensure data is correctly set
-                if (response.data && Array.isArray(response.data)) {
-                    setTodos(response.data); 
-                } else {
-                    setTodos([]); // Clear list if unexpected response
-                }
+            const token = await AsyncStorage.getItem('authToken');
+            const response = await axios.get('https://demoapi.uhrlbd.com/public/api/todos', {
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                },
+            });
+    
+            if (response.data && Array.isArray(response.data)) {
+                setTodos(response.data); 
+            } else {
+                setTodos([]); 
+            }
         } catch (error) {
             Alert.alert('Error', 'Failed to fetch todos.');
         } finally {
@@ -41,14 +62,27 @@ export default function TodoScreen({ navigation }) {
 
     const addTodo = async () => {
         if (!newTodo.trim()) {
-            Alert.alert('Validation', 'Please enter a todo title.');
+            Toast.show({
+              type: 'error',
+              text1: 'Validation',
+              text2: 'Please enter a todo title.',
+            });
             return;
-        }
+          }
+        // if (!todoDate.trim() || !todoTime.trim()) {
+        //     Alert.alert('Validation', 'Please select a date and time.');
+        //     return;
+        // }
         try {
-            await axios.post('https://demoapi.uhrlbd.com/public/api/todos', { title: newTodo });
-            setNewTodo('');
-            fetchTodos();
 
+            const newTodoData = {
+                title: newTodo,
+                date: date.toISOString(), // Correct Date Formatting
+            };
+            await axios.post('https://demoapi.uhrlbd.com/public/api/todos', newTodoData);
+            setNewTodo('');
+            setDate(new Date()); // Reset Date
+            fetchTodos();
             Toast.show({
                 type: 'success',
                 text1: 'Success',
@@ -64,7 +98,24 @@ export default function TodoScreen({ navigation }) {
             });
         }
     };
-
+    const toggleCompleteTodo = async (id, completed) => {
+        const completedAt = !completed ? new Date().toISOString() : null;
+    
+        try {
+            await axios.put(`https://demoapi.uhrlbd.com/public/api/todos/${id}`, {
+                completed: !completed,
+                completedAt,
+            });
+            fetchTodos();
+            Toast.show({
+                type: 'success',
+                text1: 'Task Updated',
+                text2: 'Task completion status updated!',
+            });
+        } catch (error) {
+            Alert.alert('Error', 'Failed to update task status.');
+        }
+    };
     const deleteTodo = async (id) => {
         try {
             await axios.delete(`https://demoapi.uhrlbd.com/public/api/todos/${id}`);
@@ -102,9 +153,9 @@ export default function TodoScreen({ navigation }) {
                 <Icon name="check-circle" size={24} color="#27ae60" />
                 <Text style={styles.todoText}>{item.title}</Text>
             </View>
-            <TouchableOpacity onPress={() => deleteTodo(item.id)}>
-                <Icon name="delete" size={24} color="#e74c3c" />
-            </TouchableOpacity>
+            // <TouchableOpacity onPress={() => deleteTodo(item.id)}>
+            //     <Icon name="delete" size={24} color="#e74c3c" />
+            // </TouchableOpacity>
         </View>
     );
 
@@ -113,7 +164,8 @@ export default function TodoScreen({ navigation }) {
             <View style={styles.header}>
                 <Text style={styles.title}>Todo App</Text>
                 <TouchableOpacity onPress={handleLogout} style={styles.logoutButton}>
-                    <Text style={styles.logoutText}>Logout</Text>
+                <Icon name="log-out-outline" size={16} color="#fff" style={styles.buttonIcon} />
+                    {/* <Text style={styles.logoutText}>Logout</Text> */}
                 </TouchableOpacity>
             </View>
 
@@ -125,22 +177,79 @@ export default function TodoScreen({ navigation }) {
                 onChangeText={setNewTodo}
                 style={styles.input}
             />
-            <TouchableOpacity onPress={addTodo} style={styles.addButton}>
-                <Text style={styles.addButtonText}>Add Todo</Text>
-            </TouchableOpacity>
+            <Button onPress={() => setShow(true)} title="Select Date & Time" />
+      <Text>Selected Date: {date.toLocaleString()}</Text>
+      
+      {show && (
+        <DateTimePicker
+          testID="dateTimePicker"
+          value={date}
+          mode="datetime"
+          is24Hour={true}
+          onChange={onChange}
+        />
+      )}
+           <TouchableOpacity onPress={addTodo} style={styles.addButton}>
+    <Icon name="add-circle" size={25} color="#fff" style={styles.buttonIcon} />
+    {/* <Text style={styles.addButtonText}>Add Todo</Text> */}
+</TouchableOpacity>
+
 
             {loading ? (
                 <ActivityIndicator size="large" color="#3498db" style={{ marginTop: 20 }} />
             ) : (
                 <FlatList
+                ListHeaderComponent={() => (
+                    <View style={styles.headerRow}>
+                        <Text style={styles.headerColumn}>Title</Text>
+                        <Text style={styles.headerColumn}>Date Time</Text>
+                        <Text style={styles.headerColumn}>Status</Text>
+                    </View>
+                )}
                 data={todos}
                 keyExtractor={(item) => item.id.toString()} // Ensure keys are unique
                 renderItem={({ item }) => (
                     <View style={styles.todoItem}>
                         <Text style={styles.todoText}>{item.title}</Text>
-                        <TouchableOpacity onPress={() => deleteTodo(item.id)}>
+    {/* <Text style={styles.todoColumn}>
+                {item.created_at
+                    ? new Date(item.updated_at).toLocaleString()
+                    : 'Not Completed'}
+            </Text> */}
+            <Text style={styles.todoColumn}>
+    {item.updated_at
+        ? new Date(item.updated_at).toLocaleString('en-US', {
+            //   weekday: 'long', // e.g., Monday
+              year: 'numeric', // e.g., 2024
+            //   month: 'long', // e.g., November
+              day: 'numeric', // e.g., 26
+              hour: '2-digit', // e.g., 08
+              minute: '2-digit', // e.g., 45
+              hour12: true, // AM/PM format
+          })
+        : 'No Date'}
+</Text>
+            <TouchableOpacity
+                onPress={() => toggleCompleteTodo(item.id, item.completed)}
+                style={[
+                    styles.statusButton,
+                    item.completed
+                        ? styles.completedButton
+                        : styles.incompleteButton,
+                ]}
+            >
+                <Text style={styles.statusButtonText}>
+                    {/* {item.completed ? 'Done' : 'Pending'} */}
+                    <Icon
+                name={item.completed ? 'checkmark-circle' : 'ellipse-outline'}
+                size={24}
+                color="#fff"
+            />
+                </Text>
+            </TouchableOpacity>
+                        {/* <TouchableOpacity onPress={() => deleteTodo(item.id)}>
                             <Text style={styles.deleteText}>Delete</Text>
-                        </TouchableOpacity>
+                        </TouchableOpacity> */}
                     </View>
                 )}
                 ListEmptyComponent={
@@ -159,10 +268,96 @@ export default function TodoScreen({ navigation }) {
 }
 
 const styles = StyleSheet.create({
+    addButton: {
+        flexDirection: 'row',
+        backgroundColor: '#3498db',
+        padding: 12,
+        borderRadius: 8,
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginBottom: 16,
+    },
+    actionButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        padding: 10,
+    },
+    logoutButton: {
+        flexDirection: 'row',
+        padding: 8,
+        backgroundColor: '#e74c3c',
+        borderRadius: 5,
+        alignItems: 'center',
+    },
+    buttonIcon: {
+        marginRight: 8,
+    },
+    addButtonText: {
+        color: '#fff',
+        fontSize: 16,
+        fontWeight: '600',
+    },
+    deleteText: {
+        color: '#e74c3c',
+        fontWeight: '600',
+        marginLeft: 8,
+    },
+    logoutText: {
+        color: '#fff',
+        fontWeight: '600',
+    },
     container: {
         flex: 1,
-        padding: 16,
-        backgroundColor: '#f9f9f9',
+        padding: 10,
+        backgroundColor: '#ddd',
+    },
+    headerRow: {
+        flexDirection: 'row',
+        padding: 10,
+        backgroundColor: '#f4f4f4',
+        borderBottomWidth: 1,
+        borderColor: '#ccc',
+    },
+    headerColumn: {
+        flex: 1,
+        fontSize: 14,
+        fontWeight: 'bold',
+        color: '#333',
+        textAlign: 'center',
+    },
+    todoRow: {
+        flexDirection: 'row',
+        padding: 10,
+        backgroundColor: '#fff',
+        borderBottomWidth: 1,
+        borderColor: '#eee',
+    },
+    todoColumn: {
+        flex: 1,
+        fontSize: 12,
+        color: '#333',
+        textAlign: 'center',
+    },
+    statusButton: {
+        padding: 5,
+        borderRadius: 5,
+        alignItems: 'center',
+    },
+    completedButton: {
+        backgroundColor: '#27ae60',
+    },
+    incompleteButton: {
+        backgroundColor: '#e74c3c',
+    },
+    statusButtonText: {
+        color: '#fff',
+        fontWeight: '300',
+    },
+    emptyMessage: {
+        textAlign: 'center',
+        fontSize: 18,
+        marginTop: 20,
+        color: '#555',
     },
     header: {
         flexDirection: 'row',
@@ -171,7 +366,7 @@ const styles = StyleSheet.create({
         marginBottom: 16,
     },
     title: {
-        fontSize: 28,
+        fontSize: 20,
         fontWeight: 'bold',
         color: '#333',
     },
