@@ -30,11 +30,13 @@ export default function TodoScreen({ navigation }) {
     const [show, setShow] = useState(false);
   
     const onChange = (event, selectedDate) => {
-      if (selectedDate) {
-        setDate(selectedDate);
-      }
-      setShow(false);
-    };
+        if (event.type === 'set') {
+          setDate(selectedDate || date);
+        }
+        if (Platform.OS === 'android') {
+          setShow(false);  // Hide the picker on Android
+        }
+      };
 
 
     const fetchTodos = async () => {
@@ -66,6 +68,7 @@ export default function TodoScreen({ navigation }) {
               type: 'error',
               text1: 'Validation',
               text2: 'Please enter a todo title.',
+              onHide: () => Toast.hide(),  // Corrected
             });
             return;
           }
@@ -88,6 +91,7 @@ export default function TodoScreen({ navigation }) {
                 text1: 'Success',
                 text2: 'Todo added successfully!',
                 position: 'bottom',
+                onHide: () => Toast.hide(),  // Corrected
             });
         } catch (error) {
             Toast.show({
@@ -95,6 +99,7 @@ export default function TodoScreen({ navigation }) {
                 text1: 'Error',
                 text2: 'Failed to add todo!',
                 position: 'bottom',
+                onHide: () => Toast.hide(),  // Corrected
             });
         }
     };
@@ -111,6 +116,7 @@ export default function TodoScreen({ navigation }) {
                 type: 'success',
                 text1: 'Task Updated',
                 text2: 'Task completion status updated!',
+                onHide: () => Toast.hide(),  // Corrected
             });
         } catch (error) {
             Alert.alert('Error', 'Failed to update task status.');
@@ -124,6 +130,7 @@ export default function TodoScreen({ navigation }) {
                 type: 'success',
                 text1: 'Deleted',
                 text2: 'Todo deleted successfully!',
+                onHide: () => Toast.hide(),  // Corrected
             });
         } catch (error) {
             Alert.alert('Error', 'Failed to delete todo.');
