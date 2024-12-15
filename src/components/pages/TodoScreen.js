@@ -11,33 +11,47 @@ import {
     RefreshControl,
     Button,
     Platform ,
+    SafeAreaView,
 } from 'react-native';
 import axios from 'axios';
 import Toast from 'react-native-toast-message';
 // import Icon from 'react-native-vector-icons/MaterialIcons';
 import Icon from 'react-native-vector-icons/Ionicons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-
+import {Overlay} from 'react-native-elements';
 import DateTimePicker from '@react-native-community/datetimepicker';
+import moment from "moment";
 export default function TodoScreen({ navigation }) {
     const [todos, setTodos] = useState([]);
     const [newTodo, setNewTodo] = useState('');
+
+  
     const [loading, setLoading] = useState(false);
     const [refreshing, setRefreshing] = useState(false);
-  
+   
 
-    const [date, setDate] = useState(new Date());
-    const [show, setShow] = useState(false);
-  
-    const onChange = (event, selectedDate) => {
-        if (event.type === 'set') {
-          setDate(selectedDate || date);
-        }
-        if (Platform.OS === 'android') {
-          setShow(false);  // Hide the picker on Android
-        }
-      };
+    const [mydate, setDate] = useState(new Date());
+    const [displaymode, setMode] = useState('date');
+    const [isDisplayDate, setShow] = useState(false);
 
+    const changeSelectedDate = (event, selectedDate) => {
+        if (event.type === 'dismissed') {
+            if (isDisplayDate) setShow(false); 
+            return; 
+        }
+        if (selectedDate) setDate(selectedDate);
+        setShow(false); 
+    };
+    
+    const displayDatePicker = () => {
+        setShow(true); 
+        setMode('date'); 
+    };
+    
+    const displayTimePicker = () => {
+        setShow(true); 
+        setMode('time'); 
+    };
 
     const fetchTodos = async () => {
         setLoading(true);
@@ -67,8 +81,7 @@ export default function TodoScreen({ navigation }) {
             Toast.show({
               type: 'error',
               text1: 'Validation',
-              text2: 'Please enter a todo title.',
-              onHide: () => Toast.hide(),  // Corrected
+              text2: 'Please enter a todo title.'
             });
             return;
           }
@@ -77,10 +90,10 @@ export default function TodoScreen({ navigation }) {
         //     return;
         // }
         try {
-
+            const formattedDate = moment(mydate).toISOString(); // API-friendly format
             const newTodoData = {
                 title: newTodo,
-                date: date.toISOString(), // Correct Date Formatting
+                todo_submit_date: formattedDate, // Correct Date Formatting
             };
             await axios.post('https://demoapi.uhrlbd.com/public/api/todos', newTodoData);
             setNewTodo('');
@@ -90,8 +103,7 @@ export default function TodoScreen({ navigation }) {
                 type: 'success',
                 text1: 'Success',
                 text2: 'Todo added successfully!',
-                position: 'bottom',
-                onHide: () => Toast.hide(),  // Corrected
+                position: 'bottom'
             });
         } catch (error) {
             Toast.show({
@@ -99,7 +111,6 @@ export default function TodoScreen({ navigation }) {
                 text1: 'Error',
                 text2: 'Failed to add todo!',
                 position: 'bottom',
-                onHide: () => Toast.hide(),  // Corrected
             });
         }
     };
@@ -116,7 +127,6 @@ export default function TodoScreen({ navigation }) {
                 type: 'success',
                 text1: 'Task Updated',
                 text2: 'Task completion status updated!',
-                onHide: () => Toast.hide(),  // Corrected
             });
         } catch (error) {
             Alert.alert('Error', 'Failed to update task status.');
@@ -130,7 +140,6 @@ export default function TodoScreen({ navigation }) {
                 type: 'success',
                 text1: 'Deleted',
                 text2: 'Todo deleted successfully!',
-                onHide: () => Toast.hide(),  // Corrected
             });
         } catch (error) {
             Alert.alert('Error', 'Failed to delete todo.');
@@ -160,9 +169,9 @@ export default function TodoScreen({ navigation }) {
                 <Icon name="check-circle" size={24} color="#27ae60" />
                 <Text style={styles.todoText}>{item.title}</Text>
             </View>
-            // <TouchableOpacity onPress={() => deleteTodo(item.id)}>
-            //     <Icon name="delete" size={24} color="#e74c3c" />
-            // </TouchableOpacity>
+            {/* <TouchableOpacity onPress={() => deleteTodo(item.id)}> */}
+             {/* <Icon name="delete" size={24} color="#e74c3c" /> */}
+             {/* </TouchableOpacity> */}
         </View>
     );
 
@@ -184,18 +193,39 @@ export default function TodoScreen({ navigation }) {
                 onChangeText={setNewTodo}
                 style={styles.input}
             />
-            <Button onPress={() => setShow(true)} title="Select Date & Time" />
-      <Text>Selected Date: {date.toLocaleString()}</Text>
-      
-      {show && (
+
+
+      <View style={styles.buttonContainer}>
+        <TouchableOpacity
+          style={[styles.customButton, { backgroundColor: '#3498db' }]}
+          onPress={displayDatePicker}
+        >
+          <Text style={styles.buttonText}>Select Date</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[styles.customButton, { backgroundColor: '#e67e22' }]}
+          onPress={displayTimePicker}
+        >
+          <Text style={styles.buttonText}>Select Time</Text>
+        </TouchableOpacity>
+      </View>
+
+      {isDisplayDate && (
         <DateTimePicker
           testID="dateTimePicker"
-          value={date}
-          mode="datetime"
+          value={mydate}
+          mode={displaymode}
           is24Hour={true}
-          onChange={onChange}
+          display="default"
+          onChange={changeSelectedDate}
         />
       )}
+
+      <Text style={styles.selectedText}>
+        Selected Date & Time: {mydate.toLocaleString()}
+      </Text>
+
            <TouchableOpacity onPress={addTodo} style={styles.addButton}>
     <Icon name="add-circle" size={25} color="#fff" style={styles.buttonIcon} />
     {/* <Text style={styles.addButtonText}>Add Todo</Text> */}
@@ -275,6 +305,28 @@ export default function TodoScreen({ navigation }) {
 }
 
 const styles = StyleSheet.create({
+    buttonContainer: {
+        flexDirection: 'row',
+        justifyContent: 'space-around',
+        marginVertical: 20,
+      },
+      customButton: {
+        paddingVertical: 10,
+        paddingHorizontal: 20,
+        borderRadius: 8,
+        alignItems: 'center',
+      },
+      buttonText: {
+        color: '#fff',
+        fontSize: 16,
+        fontWeight: '600',
+      },
+      selectedText: {
+        fontSize: 18,
+        marginTop: 10,
+        textAlign: 'center',
+        color: 'blue',
+      },
     addButton: {
         flexDirection: 'row',
         backgroundColor: '#3498db',
@@ -390,6 +442,7 @@ const styles = StyleSheet.create({
         fontSize: 20,
         fontWeight: 'bold',
         marginBottom: 8,
+        marginTop: 18,
         color: '#555',
     },
     input: {
@@ -398,13 +451,15 @@ const styles = StyleSheet.create({
         padding: 10,
         borderRadius: 8,
         marginBottom: 10,
+        marginTop: 10,
         backgroundColor: '#fff',
     },
     addButton: {
-        backgroundColor: '#3498db',
+        backgroundColor: 'brown',
         padding: 12,
         borderRadius: 8,
         alignItems: 'center',
+        marginTop: 16,
         marginBottom: 16,
     },
     addButtonText: {
