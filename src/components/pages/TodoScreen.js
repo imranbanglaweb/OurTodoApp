@@ -21,6 +21,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import {Overlay} from 'react-native-elements';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import moment from "moment";
+
 export default function TodoScreen({ navigation }) {
     const [todos, setTodos] = useState([]);
     const [newTodo, setNewTodo] = useState('');
@@ -34,6 +35,8 @@ export default function TodoScreen({ navigation }) {
     const [displaymode, setMode] = useState('date');
     const [isDisplayDate, setShow] = useState(false);
 
+
+    
     const changeSelectedDate = (event, selectedDate) => {
         if (event.type === 'dismissed') {
             if (isDisplayDate) setShow(false); 
@@ -90,7 +93,9 @@ export default function TodoScreen({ navigation }) {
         //     return;
         // }
         try {
-            const formattedDate = moment(mydate).toISOString(); // API-friendly format
+            // const formattedDate = moment(mydate).toISOString(); // API-friendly format
+            const formattedDate = moment(mydate).format("YYYY-MM-DD HH:mm:ss"); 
+
             const newTodoData = {
                 title: newTodo,
                 todo_submit_date: formattedDate, // Correct Date Formatting
@@ -112,8 +117,10 @@ export default function TodoScreen({ navigation }) {
                 text2: 'Failed to add todo!',
                 position: 'bottom',
             });
+            console.log('Error details:', error.response ? error.response.data : error.message);
         }
     };
+   
     const toggleCompleteTodo = async (id, completed) => {
         const completedAt = !completed ? new Date().toISOString() : null;
     
@@ -221,10 +228,10 @@ export default function TodoScreen({ navigation }) {
           onChange={changeSelectedDate}
         />
       )}
-
+{/* 
       <Text style={styles.selectedText}>
         Selected Date & Time: {mydate.toLocaleString()}
-      </Text>
+      </Text> */}
 
            <TouchableOpacity onPress={addTodo} style={styles.addButton}>
     <Icon name="add-circle" size={25} color="#fff" style={styles.buttonIcon} />
@@ -255,7 +262,7 @@ export default function TodoScreen({ navigation }) {
             </Text> */}
             <Text style={styles.todoColumn}>
     {item.updated_at
-        ? new Date(item.updated_at).toLocaleString('en-US', {
+        ? new Date(item.todo_submit_date).toLocaleString('en-US', {
             //   weekday: 'long', // e.g., Monday
               year: 'numeric', // e.g., 2024
             //   month: 'long', // e.g., November
@@ -312,14 +319,14 @@ const styles = StyleSheet.create({
       },
       customButton: {
         paddingVertical: 10,
-        paddingHorizontal: 20,
+        paddingHorizontal: 10,
         borderRadius: 8,
         alignItems: 'center',
       },
       buttonText: {
         color: '#fff',
-        fontSize: 16,
-        fontWeight: '600',
+        fontSize: 10,
+        fontWeight: '400',
       },
       selectedText: {
         fontSize: 18,
