@@ -21,6 +21,9 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import {Overlay} from 'react-native-elements';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import moment from "moment";
+// import Picker from '@react-native-picker/picker';
+import { Picker } from '@react-native-picker/picker';
+
 
 export default function TodoScreen({ navigation }) {
     const [todos, setTodos] = useState([]);
@@ -35,8 +38,38 @@ export default function TodoScreen({ navigation }) {
     const [displaymode, setMode] = useState('date');
     const [isDisplayDate, setShow] = useState(false);
 
-
+    const [searchDate, setSearchDate] = useState('');
+    const [searchStatus, setSearchStatus] = useState('');
     
+    
+     // Search Function
+     const searchTodos = async () => {
+        setLoading(true);
+        try {
+            const token = await AsyncStorage.getItem('authToken');
+            const todo_submit_date = moment(mydate).format("YYYY-MM-DD HH:mm:ss"); 
+            const response = await axios.get('https://demoapi.uhrlbd.com/public/api/search-todos', {
+                
+                params: {
+                    status: searchStatus,
+                    date: todo_submit_date,
+                    
+                },
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                },
+            });
+            // console.log('Error details:', error.response ? error.response.data : error.message);
+            setTodos(response.data || []);
+        } catch (error) {
+            Alert.alert('Error', 'Failed to search todos.');
+            console.log('Error details:', error.response ? error.response.data : error.message);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+
     const changeSelectedDate = (event, selectedDate) => {
         if (event.type === 'dismissed') {
             if (isDisplayDate) setShow(false); 
@@ -192,7 +225,7 @@ export default function TodoScreen({ navigation }) {
                 </TouchableOpacity>
             </View>
 
-            <Text style={styles.sectionTitle}>Your Todos</Text>
+            {/* <Text style={styles.sectionTitle}>Your Todos</Text> */}
 
             <TextInput
                 placeholder="Add a new todo"
@@ -228,17 +261,66 @@ export default function TodoScreen({ navigation }) {
           onChange={changeSelectedDate}
         />
       )}
-{/* 
-      <Text style={styles.selectedText}>
-        Selected Date & Time: {mydate.toLocaleString()}
-      </Text> */}
-
            <TouchableOpacity onPress={addTodo} style={styles.addButton}>
     <Icon name="add-circle" size={25} color="#fff" style={styles.buttonIcon} />
     {/* <Text style={styles.addButtonText}>Add Todo</Text> */}
 </TouchableOpacity>
 
 
+{/* search view */}
+{/* <View style={styles.searchColumnDate}>
+        <TextInput
+            placeholder="Search Date (YYYY-MM-DD)"
+            value={searchDate}
+            onChangeText={setSearchDate}
+            style={styles.input}
+        />
+    </View> */}
+
+    <View style={styles.buttonContainer}>
+        <TouchableOpacity
+          style={[styles.customButton, { backgroundColor: '#365811' }]}
+          onPress={displayDatePicker}
+        >
+          <Text style={styles.buttonText}>Select Date</Text>
+        </TouchableOpacity>
+
+        {/* <TouchableOpacity
+          style={[styles.customButton, { backgroundColor: '#e67e22' }]}
+          onPress={displayTimePicker}
+        >
+          <Text style={styles.buttonText}>Select Time</Text>
+        </TouchableOpacity> */}
+      </View>
+
+      {isDisplayDate && (
+        <DateTimePicker
+          testID="dateTimePicker"
+          value={mydate}
+          mode={displaymode}
+          is24Hour={true}
+          display="default"
+          onChange={changeSelectedDate}
+        />
+      )}
+    <View style={styles.searchColumn}>
+        <Picker
+            selectedValue={searchStatus}
+            onValueChange={(value) => setSearchStatus(value)}
+            style={styles.picker}
+        >
+            <Picker.Item label="Select Status" value="" />
+            <Picker.Item label="Pending" value="pending" />
+            <Picker.Item label="Completed" value="completed" />
+        </Picker>
+    </View>
+
+    <TouchableOpacity
+        onPress={searchTodos}
+        style={styles.searchButton}
+    >
+        <Text style={styles.searchButtonText}>Search Todo</Text>
+    </TouchableOpacity>
             {loading ? (
                 <ActivityIndicator size="large" color="#3498db" style={{ marginTop: 20 }} />
             ) : (
@@ -436,11 +518,11 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
         color: '#333',
     },
-    logoutButton: {
-        padding: 8,
-        backgroundColor: '#e74c3c',
-        borderRadius: 5,
-    },
+    // logoutButton: {
+    //     padding: 8,
+    //     backgroundColor: '#e74c3c',
+    //     borderRadius: 5,
+    // },
     logoutText: {
         color: '#fff',
         fontWeight: '600',
@@ -496,6 +578,57 @@ const styles = StyleSheet.create({
         fontSize: 16,
         marginLeft: 10,
         color: '#333',
+    },
+    searchContainer: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: 16,
+        paddingHorizontal: 10,
+    },
+    searchColumn: {
+        flex: 1,
+        marginHorizontal: 5,
+        marginTop:10,
+        marginBottom:18,
+    },
+    searchColumnDate: {
+        // flex: 1,
+        marginHorizontal: 5,
+        marginTop:10,
+        // marginBottom:18,
+        // padding: 10,
+        backgroundColor: '#fff',
+    },
+    input: {
+        height: 40,
+        borderColor: 'gray',
+        borderWidth: 1,
+        // paddingHorizontal: 10,
+        color: 'black',             // Ensure text color is visible
+        placeholderTextColor: 'gray',  // Add this if needed
+        backgroundColor: '#fff',
+    },
+    picker: {
+        borderWidth: 1,
+        borderColor: '#ccc',
+        borderRadius: 8,
+        backgroundColor: '#fff',
+    },
+    searchButton: {
+        backgroundColor: '#3498db',
+        padding: 12,
+        borderRadius: 8,
+        alignItems: 'center',
+        justifyContent: 'center',
+        // marginLeft: 5,
+        marginTop:15,
+        marginBottom:5,
+    },
+    searchButtonText: {
+        color: '#fff',
+        fontSize: 14,
+        fontWeight: '600',
     },
     deleteText: {
         color: '#e74c3c',

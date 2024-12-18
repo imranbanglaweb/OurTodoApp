@@ -6,6 +6,7 @@ import TodoScreen from './components/pages/TodoScreen';
 import SignUp from './components/pages/Signup';
 import Toast from 'react-native-toast-message';
 const Stack = createNativeStackNavigator();
+import RNPickerSelect from 'react-native-picker-select';
 
 export default function App() {
     return (
