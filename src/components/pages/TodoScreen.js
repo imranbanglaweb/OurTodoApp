@@ -47,7 +47,7 @@ export default function TodoScreen({ navigation }) {
         setLoading(true);
         try {
             const token = await AsyncStorage.getItem('authToken');
-            const todo_submit_date = moment(mydate).format("YYYY-MM-DD HH:mm:ss"); 
+            const todo_submit_date = moment(mydate).format("YYYY-MM-DD"); 
             const response = await axios.get('https://demoapi.uhrlbd.com/public/api/search-todos', {
                 
                 params: {
@@ -59,7 +59,7 @@ export default function TodoScreen({ navigation }) {
                     Authorization: `Bearer ${token}`,
                 },
             });
-            // console.log('Error details:', error.response ? error.response.data : error.message);
+            console.log('Submit Data details:',response.data);
             setTodos(response.data || []);
         } catch (error) {
             Alert.alert('Error', 'Failed to search todos.');
@@ -276,10 +276,10 @@ export default function TodoScreen({ navigation }) {
             style={styles.input}
         />
     </View> */}
-
+   <Text style={[styles.buttonText,, { color: 'brown',fontSize:18,fontWeight:600,textAlign:'center',margin:5 }]}>Search Your Todos</Text>
     <View style={styles.buttonContainer}>
         <TouchableOpacity
-          style={[styles.customButton, { backgroundColor: '#365811' }]}
+          style={[styles.customButtonSearch, { backgroundColor: '#365811' }]}
           onPress={displayDatePicker}
         >
           <Text style={styles.buttonText}>Select Date</Text>
@@ -291,6 +291,8 @@ export default function TodoScreen({ navigation }) {
         >
           <Text style={styles.buttonText}>Select Time</Text>
         </TouchableOpacity> */}
+
+        
       </View>
 
       {isDisplayDate && (
@@ -319,7 +321,10 @@ export default function TodoScreen({ navigation }) {
         onPress={searchTodos}
         style={styles.searchButton}
     >
-        <Text style={styles.searchButtonText}>Search Todo</Text>
+        <Text style={styles.searchButtonText}>
+            <Icon name="search-outline" size={26} color="#fff" />
+            {/* Search Todo */}
+            </Text>
     </TouchableOpacity>
             {loading ? (
                 <ActivityIndicator size="large" color="#3498db" style={{ marginTop: 20 }} />
@@ -397,11 +402,19 @@ const styles = StyleSheet.create({
     buttonContainer: {
         flexDirection: 'row',
         justifyContent: 'space-around',
-        marginVertical: 20,
+        // marginVertical: 20,
+        marginTop: 10,
       },
       customButton: {
         paddingVertical: 10,
         paddingHorizontal: 10,
+        borderRadius: 8,
+        alignItems: 'center',
+      },
+      customButtonSearch: {
+        flex:1,
+        paddingVertical: 18,
+        // paddingHorizontal: 18,
         borderRadius: 8,
         alignItems: 'center',
       },
@@ -587,7 +600,7 @@ const styles = StyleSheet.create({
         paddingHorizontal: 10,
     },
     searchColumn: {
-        flex: 1,
+        // flex: 1,
         marginHorizontal: 5,
         marginTop:10,
         marginBottom:18,
@@ -595,7 +608,7 @@ const styles = StyleSheet.create({
     searchColumnDate: {
         // flex: 1,
         marginHorizontal: 5,
-        marginTop:10,
+        // marginTop:10,
         // marginBottom:18,
         // padding: 10,
         backgroundColor: '#fff',
@@ -622,7 +635,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
         // marginLeft: 5,
-        marginTop:15,
+        // marginTop:25,
         marginBottom:5,
     },
     searchButtonText: {
