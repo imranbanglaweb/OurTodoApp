@@ -59,7 +59,7 @@ export default function LoginScreen({ navigation }) {
       setEmail('');
       setPassword('');
       Alert.alert('Success', 'Login successful!');
-      navigation.replace('Todos');
+      navigation.replace('Main');
     } catch (error) {
       setLoading(false);
       if (error.response && error.response.data) {

@@ -41,7 +41,7 @@ export default function TodoScreen({ navigation }) {
     const [searchDate, setSearchDate] = useState('');
     const [searchStatus, setSearchStatus] = useState('');
     
-    
+    const [profileImage, setProfileImage] = useState(null);
      // Search Function
      const searchTodos = async () => {
         setLoading(true);
@@ -193,9 +193,34 @@ export default function TodoScreen({ navigation }) {
         ]);
     };
 
+    const [userName, setUserName] = useState('');
+    // useEffect(() => {
+    //     fetchTodos();
+    // }, []);
+
     useEffect(() => {
+
         fetchTodos();
-    }, []);
+        const fetchUserName = async () => {
+          try {
+            const token = await AsyncStorage.getItem('authToken');
+            const response = await axios.get('https://demoapi.uhrlbd.com/public/api/profile', {
+              headers: {
+                Authorization: `Bearer ${token}`,
+              },
+            });
+    
+            const { name } = response.data; // Extracting user's name
+            setUserName(name);
+             setProfileImage(response.data.profile_image); // Assuming 'profile_image' contains the image URL
+          } catch (error) {
+            console.log('Error fetching user name:', error.message);
+          }
+        };
+    
+        fetchUserName();
+      }, []);
+
 
     const onRefresh = async () => {
         setRefreshing(true);
@@ -203,10 +228,12 @@ export default function TodoScreen({ navigation }) {
         setRefreshing(false);
     };
 
+    
+
     const renderTodo = ({ item }) => (
         <View style={styles.todoItem}>
             <View style={styles.todoTextContainer}>
-                <Icon name="check-circle" size={24} color="#27ae60" />
+                <Icon name="check-circle" size={18} color="#27ae60" />
                 <Text style={styles.todoText}>{item.title}</Text>
             </View>
             {/* <TouchableOpacity onPress={() => deleteTodo(item.id)}> */}
@@ -217,8 +244,20 @@ export default function TodoScreen({ navigation }) {
 
     return (
         <View style={styles.container}>
-            <View style={styles.header}>
+            {/* <View style={styles.header}>
+                <TouchableOpacity onPress={() => navigation.openDrawer()}>
+                    <Icon name="menu-outline" size={30} color="#333" />
+                </TouchableOpacity>
                 <Text style={styles.title}>Todo App</Text>
+            </View> */}
+        
+            <View style={styles.topBar}>
+                
+      <Text style={styles.appTitle}>My Todo App</Text>
+      <Text style={styles.userName}>{userName || 'Guest'}</Text>
+    </View>
+    <View style={styles.header}>
+                <Text style={styles.title}>Add Todo</Text>
                 <TouchableOpacity onPress={handleLogout} style={styles.logoutButton}>
                 <Icon name="log-out-outline" size={16} color="#fff" style={styles.buttonIcon} />
                     {/* <Text style={styles.logoutText}>Logout</Text> */}
@@ -262,7 +301,7 @@ export default function TodoScreen({ navigation }) {
         />
       )}
            <TouchableOpacity onPress={addTodo} style={styles.addButton}>
-    <Icon name="add-circle" size={25} color="#fff" style={styles.buttonIcon} />
+    <Icon name="add-circle" size={18} color="#fff" style={styles.buttonIcon} />
     {/* <Text style={styles.addButtonText}>Add Todo</Text> */}
 </TouchableOpacity>
 
@@ -276,10 +315,10 @@ export default function TodoScreen({ navigation }) {
             style={styles.input}
         />
     </View> */}
-   <Text style={[styles.buttonText,, { color: 'brown',fontSize:18,fontWeight:600,textAlign:'center',margin:5 }]}>Search Your Todos</Text>
+   <Text style={[styles.buttonText,, { color: 'brown',fontSize:14,fontWeight:300,textAlign:'center' }]}>Search Your Todos</Text>
     <View style={styles.buttonContainer}>
         <TouchableOpacity
-          style={[styles.customButtonSearch, { backgroundColor: '#365811' }]}
+          style={[styles.customButtonSearch, { backgroundColor: 'black' }]}
           onPress={displayDatePicker}
         >
           <Text style={styles.buttonText}>Select Date</Text>
@@ -332,9 +371,9 @@ export default function TodoScreen({ navigation }) {
                 <FlatList
                 ListHeaderComponent={() => (
                     <View style={styles.headerRow}>
-                        <Text style={styles.headerColumn}>Title</Text>
-                        <Text style={styles.headerColumn}>Date Time</Text>
-                        <Text style={styles.headerColumn}>Status</Text>
+                        <Text style={styles.headerColumnTitle}>Title</Text>
+                        <Text style={styles.headerColumnDate}>Date Time</Text>
+                        <Text style={styles.headerColumnStatus}>Status</Text>
                     </View>
                 )}
                 data={todos}
@@ -413,7 +452,7 @@ const styles = StyleSheet.create({
       },
       customButtonSearch: {
         flex:1,
-        paddingVertical: 18,
+        paddingVertical: 9,
         // paddingHorizontal: 18,
         borderRadius: 8,
         alignItems: 'center',
@@ -423,13 +462,55 @@ const styles = StyleSheet.create({
         fontSize: 10,
         fontWeight: '400',
       },
+      topBar: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        padding: 8,
+        backgroundColor: '#007BFF', // Replace with your desired color
+        marginTop: '5',
+        marginBottom:'15'
+        // flex:1
+      },
+      appTitle: {
+        fontSize: 12,
+        fontWeight: 'bold',
+        color: '#fff',
+      },
+      userName: {
+        fontSize: 12,
+        color: '#fff',
+        fontStyle: 'italic',
+      },
       selectedText: {
         fontSize: 18,
         marginTop: 10,
         textAlign: 'center',
         color: 'blue',
       },
+      headerColumnTitle: {
+        flex: 4, // Larger width for Title
+        fontSize: 14,
+        fontWeight: 'bold',
+        color: 'blue',
+        textAlign: 'left', // Align to the left
+    },
+    headerColumnDate: {
+        flex: 4, // Medium width for Date Time
+        fontSize: 14,
+        fontWeight: 'bold',
+        color: 'blue',
+        textAlign: 'center', // Center-align text
+    },
+    headerColumnStatus: {
+        flex: 4, // Smaller width for Status
+        fontSize: 14,
+        fontWeight: 'bold',
+        color: 'blue',
+        textAlign: 'right', // Align to the right
+    },
     addButton: {
+        // flex:2,
         flexDirection: 'row',
         backgroundColor: '#3498db',
         padding: 12,
@@ -441,7 +522,7 @@ const styles = StyleSheet.create({
     actionButton: {
         flexDirection: 'row',
         alignItems: 'center',
-        padding: 10,
+        // padding: 10,
     },
     logoutButton: {
         flexDirection: 'row',
@@ -474,16 +555,16 @@ const styles = StyleSheet.create({
     },
     headerRow: {
         flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
         padding: 10,
-        backgroundColor: '#f4f4f4',
-        borderBottomWidth: 1,
-        borderColor: '#ccc',
+        backgroundColor: '#f0f0f0', // Optional background for clarity
     },
     headerColumn: {
         flex: 1,
         fontSize: 14,
         fontWeight: 'bold',
-        color: '#333',
+        color: 'blue',
         textAlign: 'center',
     },
     todoRow: {
@@ -494,10 +575,11 @@ const styles = StyleSheet.create({
         borderColor: '#eee',
     },
     todoColumn: {
-        flex: 1,
-        fontSize: 12,
+        flex: 2,
+        fontSize: 10,
         color: '#333',
-        textAlign: 'center',
+        textAlign: 'left',
+        // marginLeft:'18',
     },
     statusButton: {
         padding: 5,
@@ -525,6 +607,7 @@ const styles = StyleSheet.create({
         justifyContent: 'space-between',
         alignItems: 'center',
         marginBottom: 16,
+        
     },
     title: {
         fontSize: 20,
@@ -588,9 +671,11 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     todoText: {
-        fontSize: 16,
-        marginLeft: 10,
+        flex: 2,
+        fontSize: 12,
+        // marginLeft: 10,
         color: '#333',
+        alignItems:'left',
     },
     searchContainer: {
         flexDirection: 'row',
@@ -600,13 +685,13 @@ const styles = StyleSheet.create({
         paddingHorizontal: 10,
     },
     searchColumn: {
-        // flex: 1,
+        flex: 1,
         marginHorizontal: 5,
-        marginTop:10,
+        // marginTop:10,
         marginBottom:18,
     },
     searchColumnDate: {
-        // flex: 1,
+        flex: 1,
         marginHorizontal: 5,
         // marginTop:10,
         // marginBottom:18,
@@ -630,7 +715,7 @@ const styles = StyleSheet.create({
     },
     searchButton: {
         backgroundColor: '#3498db',
-        padding: 12,
+        padding: 8,
         borderRadius: 8,
         alignItems: 'center',
         justifyContent: 'center',
@@ -640,7 +725,7 @@ const styles = StyleSheet.create({
     },
     searchButtonText: {
         color: '#fff',
-        fontSize: 14,
+        fontSize: 12,
         fontWeight: '600',
     },
     deleteText: {
